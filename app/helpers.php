@@ -75,7 +75,7 @@ function runBackgroundJobById($bjid) {
 }
 
 if (!function_exists('runBackgroundJob')){
-function runBackgroundJob(string $class,string $method,string $parameters,?int $tries){
+function runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds){
     $created_at = date('Y-m-d h:i:s');
     $bjid = DB::table('background_jobs')
     ->insertGetId([
@@ -84,6 +84,7 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
         'parameters' => $parameters,
         'status' => 'CREATED',
         'tries' => $tries,
+        'delay_seconds' => $delay_seconds,
         'pid' => null,
         'exit_code' => null,
         'log_file' => null,

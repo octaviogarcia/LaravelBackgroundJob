@@ -41,7 +41,8 @@ class BackgroundJobController extends Controller
 
         $parameters = $request->parameters ?? '{}';
         $tries = $request->tries ?? null;//null = infinite tries
-        [$bjid,$started,$command,$output] = runBackgroundJob($request->class,$request->method,$parameters,$tries);
+        $delay_seconds = $request->delay_seconds ?? 0;
+        [$bjid,$started,$command,$output] = runBackgroundJob($request->class,$request->method,$parameters,$tries,$delay_seconds);
         
         if($started === false){
             DB::table('background_jobs')

@@ -62,6 +62,15 @@ class BackgroundJob extends Command
             return;
         }
 
+        if($bj->delay_seconds > 0){
+            $bj = $this->update_background_job_log($bjid,[
+                'status' => 'WAITING',
+                'pid'    => getmypid(),
+                'ran_at' => date('Y-m-d h:i:s')
+            ]);
+            sleep($bj->delay_seconds);
+        }
+
         $bj = $this->update_background_job_log($bjid,[
             'status' => 'RUNNING',
             'pid'    => getmypid(),
