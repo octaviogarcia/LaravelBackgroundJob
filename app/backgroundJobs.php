@@ -50,7 +50,7 @@ function backgroundJobsWaitingDelaySeconds(){
 
 if(!function_exists('backgroundJobWaitForRunningJobs')){
 function backgroundJobWaitForRunningJobs($bj){
-    $bj = update_background_job_log($bj,[
+    $bj = updateBackgroundJobLog($bj,[
         'status' => 'WAITING',
         'pid'    => getmypid(),
     ]);
@@ -136,7 +136,7 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
     $uniqid = uniqid();
     $filename = storage_path("$bjid-$uniqid");//@HACK: "posible" name clash
 
-    [$ok,$bj] = update_background_job((object)['id' => $bjid],[
+    [$ok,$bj] = updateBackgroundJob((object)['id' => $bjid],[
         'log_file' => $filename.'.log',
         'error_file' => $filename.'.err',
     ]);
@@ -147,8 +147,8 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
 }
 }
 
-if (!function_exists('update_background_job')){
-function update_background_job($bj,$data){
+if (!function_exists('updateBackgroundJob')){
+function updateBackgroundJob($bj,$data){
     if(empty($data)) return [true,DB::table('background_jobs')->where('id',$bj->id)->first()];
 
     try{
@@ -164,8 +164,8 @@ function update_background_job($bj,$data){
 }
 }
 
-if (!function_exists('echo_stderr')){
-function echo_stderr(string $string){
+if (!function_exists('echoStderr')){
+function echoStderr(string $string){
     $f = fopen('php://stderr','a');
     fwrite($f,"\r\n");
     fwrite($f,date('Y-m-d h:i:s'));
@@ -175,18 +175,18 @@ function echo_stderr(string $string){
 }
 }
 
-if (!function_exists('update_background_job_log')){
-function update_background_job_log($bj,$data){
-    [$ok,$bj_or_ex] = update_background_job($bj,$data);
+if (!function_exists('updateBackgroundJobLog')){
+function updateBackgroundJobLog($bj,$data){
+    [$ok,$bj_or_ex] = updateBackgroundJob($bj,$data);
 
-    echo_stderr("New value for BackgroundJob = ".$bj->id);
+    echoStderr("New value for BackgroundJob = ".$bj->id);
     if($ok === true){
-        echo_stderr(json_encode($bj_or_ex));
+        echoStderr(json_encode($bj_or_ex));
     }
     else{
-        echo_stderr("Error setting values");
-        echo_stderr(json_encode($data));
-        echo_stderr($bj_or_ex->getTraceAsString());
+        echoStderr("Error setting values");
+        echoStderr(json_encode($data));
+        echoStderr($bj_or_ex->getTraceAsString());
         exit(1);
     }
 
@@ -197,7 +197,7 @@ function update_background_job_log($bj,$data){
 if(!function_exists('runBackgroundJobMainThread')){
 function runBackgroundJobMainThread($bj){
     if($bj->delay_seconds > 0){
-        $bj = update_background_job_log($bj,[
+        $bj = updateBackgroundJobLog($bj,[
             'status' => 'WAITING',
             'pid'    => getmypid(),
             'ran_at' => date('Y-m-d h:i:s')
@@ -207,7 +207,7 @@ function runBackgroundJobMainThread($bj){
 
     $bj = backgroundJobWaitForRunningJobs($bj);
 
-    $bj = update_background_job_log($bj,[
+    $bj = updateBackgroundJobLog($bj,[
         'status' => 'RUNNING',
         'pid'    => getmypid(),
         'ran_at' => date('Y-m-d h:i:s')
@@ -221,7 +221,7 @@ function runBackgroundJobMainThread($bj){
             $output = $obj->{$bj->method}($parameters,$bj);
             echo json_encode($output);
 
-            $bj = update_background_job_log($bj,[
+            $bj = updateBackgroundJobLog($bj,[
                 'status'=> 'DONE',
                 'tries' => $bj->tries !== null? ($bj->tries-1) : null,
                 'exit_code' => 0,
@@ -238,7 +238,7 @@ function runBackgroundJobMainThread($bj){
 
             $bj->tries--;
             if($bj->tries <= 0){
-                $bj = update_background_job_log($bj,[
+                $bj = updateBackgroundJobLog($bj,[
                     'status'=> 'ERROR',
                     'tries' => 0,
                     'exit_code' => 1,
@@ -247,7 +247,7 @@ function runBackgroundJobMainThread($bj){
                 exit(1);
             }
             else{
-                $bj = update_background_job_log($bj,[
+                $bj = updateBackgroundJobLog($bj,[
                     'tries' => $bj->tries
                 ]);
             }
