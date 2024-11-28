@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('class');
             $table->string('method');
             $table->json('parameters');
-            $table->enum('status',['CREATED','RUNNING','DONE','KILLED','ERROR']);
+            $table->enum('status',['CREATED','WAITING','RUNNING','DONE','KILLED','ERROR']);
             $table->integer('pid')->nullable();
             $table->integer('exit_code')->nullable();
             $table->string('log_file')->nullable();
