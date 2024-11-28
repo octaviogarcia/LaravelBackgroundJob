@@ -14,13 +14,15 @@ This implementation uses process forking. I have found that other solutions such
     NOTE: If you are on windows, change "'https://php.new/install/windows/8.3" to "'https://php.new/install/windows" in the installation command.
 
 3- Open the project in your command line and input these commands
+
     npm install && npm run build
-    
+
     composer run dev
 
 4- Go to http://localhost:8000 in your browser
 
 5- You'll see on the left and a panel with inputs on the right. 
+
     Class -> Class to use in the background job.
     Method -> Method to use in the background job.
     Parameters -> Parameters sent to Class::method, must be valid JSON.
@@ -30,6 +32,7 @@ This implementation uses process forking. I have found that other solutions such
     Priority -> When jobs are waiting on Queue, those with higher priority will start running first.
 
 6- These are the classes and methods
+
     Trivial::run -> doesn't use arguments. Immediately returns 1.
 
     Trivial2::run -> doesn't use arguments. Immediately returns 2.
