@@ -5,30 +5,69 @@ use Illuminate\Http\Request;
 use App\BackgroundJobs;
 
 $available_background_jobs = [
-   App\BackgroundJobs\FibonacciCalculator::class,
-   App\BackgroundJobs\FibonacciCalculator2::class,
+   App\BackgroundJobs\Trivial::class,
+   App\BackgroundJobs\Trivial2::class,
+   App\BackgroundJobs\ThrowException::class,
 ];
 
-function runBackgroundJobById($id,$log_file,$err_file){
+function runBackgroundJobById($bjid){
+    $bj = DB::table('background_jobs')
+    ->where('id',$bjid)
+    ->first();
+
+    $log_file = $bj->log_file;
+    $error_file = $bj->error_file;
+
     $php = escapeshellarg(PHP_BINARY);
     $artisan  = escapeshellarg(base_path('artisan'));
     $log_file = escapeshellarg($log_file);
-    $err_file = escapeshellarg($err_file);
+    $error_file	 = escapeshellarg($error_file);
 
     $final_command = null;
     if(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'){
-        $final_command = "start /B \"\" $php $artisan app:background-job $id > $log_file 2> $err_file";
+        $final_command = "start /B \"\" $php $artisan app:background-job $bjid > $log_file 2> $error_file";
     }
     else{
-        $final_command = "$php $artisan app:background-job $id > $log_file 2> $err_file &";
+        $final_command = "$php $artisan app:background-job $bjid > $log_file 2> $error_file &";
     }
     
     $output = null;
     $exit_code = null;
     $ran = exec($final_command,$output,$exit_code);
 
-    return [$ran !== false,$final_command.'<br>'.implode('<br>',$output)];
+    return [$bjid,$ran !== false,$final_command,$output];
 };
+
+function runBackgroundJob(string $class,string $method,string $parameters){
+    $created_at = date('Y-m-d h:i:s');
+    $bjid = DB::table('background_jobs')
+    ->insertGetId([
+        'class' => $class,
+        'method' => $method,
+        'parameters' => $parameters,
+        'status' => 'CREATED',
+        'pid' => null,
+        'exit_code' => null,
+        'log_file' => null,
+        'error_file' => null,
+        'created_at' =>  $created_at,
+        'ran_at' => null,
+        'done_at' => null,
+    ]);
+
+    $uniqid = uniqid();
+    //$filename = storage_path("$bjid|$class-$method-$uniqid");//@HACK: "posible" name clash
+    $filename = storage_path("$bjid-$uniqid");//@HACK: "posible" name clash
+
+    DB::table('background_jobs')
+    ->where('id',$bjid)
+    ->update([
+        'log_file' => $filename.'.log',
+        'error_file' => $filename.'.err',
+    ]);
+
+    return runBackgroundJobById($bjid);
+}
 
 Route::get('/', function () use ($available_background_jobs){
     return view('backgroundJobs',compact('available_background_jobs'));
@@ -58,32 +97,25 @@ Route::post('/runBackgroundJob',function(Request $request) use ($available_backg
         }
     })->validate();
 
-    $log_file = storage_path(uniqid().'.log');
-    $err_file = storage_path(uniqid().'.err');
-    $bjid = DB::table('background_jobs')
-    ->insertGetId([
-        'class' => $request->class,
-        'method' => $request->method,
-        'parameters' => $request->parameters,
-        'status' => 'CREATED',
-        'pid' => null,
-        'exit_code' => null,
-        'log_file' => $log_file,
-        'error_file' => $err_file,
-        'created_at' =>  date('Y-m-d h:i:s'),
-        'ran_at' => null,
-        'done_at' => null,
-    ]);
-
-    [$started,$output] = runBackgroundJobById($bjid,$log_file,$err_file);
-
+    [$bjid,$started,$command,$output] = runBackgroundJob($request->class,$request->method,$request->parameters);
+    
     if($started === false){
         DB::table('background_jobs')
         ->where('id',$bjid)->delete();
-        return 'Error '.$output;
+        $out = "Error running {$request->class}->{$request->method}({$request->params}) ID $bjid";
+        $out .= '<br>';
+        $out .= $command;
+        $out .= '<br>';
+        $out .= implode('<br>',$output);
+        return $out;
     }
 
-    return 'Created And Started out: '.$output;
+    $out = "Created {$request->class}->{$request->method}({$request->params}) ID $bjid";
+    $out .= '<br>';
+    $out .= $command;
+    $out .= '<br>';
+    $out .= implode('<br>',$output);
+    return $out;
 });
 
 Route::get('/backgroundJobs',function(Request $request){
@@ -113,4 +145,28 @@ Route::get('/debugUnix',function(){
     $command = "$php $artisan app:background-job 38 &";
     $output = exec($command);
     return $command.'<br>'.htmlspecialchars($output);
+});
+
+Route::get('/ByClassTest',function(){
+    $ret = runBackgroundJob(App\BackgroundJobs\ThrowException::class,'args',json_encode([1,2,3,4]));
+    $bjid = $ret[0];
+    $bj = DB::table('background_jobs')
+    ->where('id',$bjid)->first();
+    if($bj === null) throw new \Exception('Error creating job');
+
+    $seconds_sleep = 2;
+    $max_wait = 20;
+    while($bj->status != 'DONE' && $bj->status != 'ERROR' && $bj->status != 'KILLED'){
+        if($max_wait <= 0){
+            throw new \Exception('Timeout waiting job '.$bjid);
+        }
+
+        sleep($seconds_sleep);
+        $max_wait -= $seconds_sleep;
+
+        $bj = DB::table('background_jobs')
+        ->where('id',$bjid)->first();
+    }
+
+    return file_get_contents($bj->log_file);
 });

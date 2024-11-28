@@ -21,6 +21,12 @@ class BackgroundJob extends Command
      */
     protected $description = 'Run a background job with an id';
 
+    private function echo_stderr(string $string){
+        $f = fopen('php://stderr','a');
+        fwrite($f,$string);
+        fclose($f);
+    }
+
     /**
      * Execute the console command.
      */
@@ -31,7 +37,7 @@ class BackgroundJob extends Command
         ->where('id',$bjid)->first();
 
         if(is_null($bj)){
-            echo 'Error!';
+            $this->echo_stderr("Background Job '$bjid' not found");
             return;
         }
 
@@ -43,16 +49,28 @@ class BackgroundJob extends Command
             'ran_at' => date('Y-m-d h:i:s')
         ]);
 
-        //TODO DO WORK!
+        try{
+            $obj = new $bj->class;
+            $output = $obj->{$bj->method}(json_decode($bj->parameters ?? '{}',true));
+            echo json_encode($output);
 
-        DB::table('background_jobs')
-        ->where('id',$bjid)
-        ->update([
-            'status'=> 'DONE',
-            'exit_code' => 0,
-            'done_at' => date('Y-m-d h:i:s')
-        ]);
-
-        echo 'Done!';
+            DB::table('background_jobs')
+            ->where('id',$bjid)
+            ->update([
+                'status'=> 'DONE',
+                'exit_code' => 0,
+                'done_at' => date('Y-m-d h:i:s')
+            ]);
+        }
+        catch(\Exception $e){
+            $this->echo_stderr($e->getTraceAsString());
+            DB::table('background_jobs')
+            ->where('id',$bjid)
+            ->update([
+                'status'=> 'ERROR',
+                'exit_code' => 1,
+                'done_at' => date('Y-m-d h:i:s')
+            ]);
+        }
     }
 }
