@@ -9,12 +9,16 @@ This implementation uses process forking. I have found that other solutions such
 ## Using the application
 
 1- Git clone the application from Github
+
 2- Install PHP, Composer and Laravel following [these instructions](https://laravel.com/docs/11.x#installing-php)
     NOTE: If you are on windows, change "'https://php.new/install/windows/8.3" to "'https://php.new/install/windows" in the installation command.
+
 3- Open the project in your command line and input these commands
     npm install && npm run build
     composer run dev
+
 4- Go to http://localhost:8000 in your browser
+
 5- You'll see on the left and a panel with inputs on the right. 
     Class -> Class to use in the background job.
     Method -> Method to use in the background job.
