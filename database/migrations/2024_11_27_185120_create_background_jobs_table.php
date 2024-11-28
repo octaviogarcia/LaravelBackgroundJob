@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('status',['CREATED','WAITING','RUNNING','DONE','KILLED','ERROR']);
             $table->integer('tries')->nullable()->default(1);
             $table->integer('delay_seconds')->default(0);
+            $table->integer('priority')->default(100);
             $table->integer('pid')->nullable();
             $table->integer('exit_code')->nullable();
             $table->string('log_file')->nullable();

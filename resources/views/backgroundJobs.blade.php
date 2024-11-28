@@ -72,6 +72,7 @@
                                 <th data-cast-col="status">Status</th>
                                 <th data-cast-col="tries" class="small_attribute">Tries</th>
                                 <th data-cast-col="delay_seconds" class="small_attribute">Delay (s)</th>
+                                <th data-cast-col="priority" class="small_attribute">Priority</th>
                                 <th data-cast-col="pid" class="small_attribute">PID</th>
                                 <th data-cast-col="exit_code" class="small_attribute">EXIT CODE</th>
                                 <th data-cast-col="log_file">Log File</th>
@@ -93,6 +94,7 @@
                                     <td data-cast-col="status">Status</td>
                                     <td data-cast-col="tries" class="small_attribute">Tries</td>
                                     <td data-cast-col="delay_seconds" class="small_attribute">Delay (s)</td>
+                                    <td data-cast-col="priority" class="small_attribute">Priority</td>
                                     <td data-cast-col="pid" class="small_attribute">PID</td>
                                     <td data-cast-col="exit_code" class="small_attribute">EXIT CODE</td>
                                     <td data-cast-col="log_file">Log File</td>
@@ -121,7 +123,7 @@
                     </div>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Parameters</h6>
-                        <textarea name='parameters' style="width: 100%;border: 1px solid darkcyan;">
+                        <textarea name='parameters' style="width: 100%;border: 1px solid black;height: 10em;overflow-y: scroll;">
                         </textarea>
                     </div>
                     <div style="width: 100%;border: 1px solid black;">
@@ -132,10 +134,14 @@
                         <h6>Delay (seconds)</h6>
                         <input name="delay_seconds" type='number' style="width: 100%;border: 1px solid darkcyan;">
                     </div>
+                    <div style="width: 100%;border: 1px solid black;">
+                        <h6>Priority</h6>
+                        <input name="priority" type='number' style="width: 100%;border: 1px solid darkcyan;">
+                    </div>
                     <button data-js-submit-form  style="width: 100%;border: 1px solid black;background: grey;color: white;text-shadow: 1px 1px 2px black;">Run</button>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Return</h6>
-                        <p id="runBackgroundJobOutput"  style="width: 100%;border: 1px solid black;color: darkcyan">&nbsp;</p>
+                        <p id="runBackgroundJobOutput"  style="width: 100%;border: 1px solid black;color: darkcyan;background: lightgray;height: 10em;overflow-y: scroll;">&nbsp;</p>
                     </div>
                 </form>
             </div>

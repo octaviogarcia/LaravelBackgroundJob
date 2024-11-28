@@ -28,13 +28,13 @@ class BackgroundJob extends Command
     {        
         $bjid = $this->argument('id');
 
-        $bj = update_background_job_log($bjid,[]);
+        $bj = update_background_job_log((object)['id' => $bjid],[]);
 
         if(is_null($bj)){
             echo_stderr("Background Job '$bjid' not found");
             return;
         }
 
-        runBackgroundJobMainThread($bjid);
+        runBackgroundJobMainThread($bj);
     }
 }

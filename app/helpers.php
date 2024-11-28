@@ -8,40 +8,56 @@ function backgroundJobsGetAllowedClasses(){
         App\BackgroundJobs\ThrowException::class,
         App\BackgroundJobs\Sleepy::class,
         App\BackgroundJobs\Fails::class,
+        App\BackgroundJobs\AverageRandoms::class
     ];
 }
 }
 
 if(!function_exists('backgroundJobsMaxRunning')){
 function backgroundJobsMaxRunning(){
-    return 1;
+    return 2;
 }
 }
 
 if(!function_exists('backgroundJobFreeSpot')){
-function backgroundJobFreeSpot($bjid){
-    return DB::table('background_jobs')
+function backgroundJobFreeSpot($bj){
+    $available_free_spot = DB::table('background_jobs')
     ->where('status','=','RUNNING')
     ->count() < backgroundJobsMaxRunning();
+
+    if($available_free_spot === false) return false;
+
+    $no_others_with_higer_priority = DB::table('background_jobs')
+    ->where('id','<>',$bj->id)
+    ->where('status','=','WAITING')
+    ->where(function($q) use ($bj){
+        return $q->where('priority','>',$bj->priority)
+        ->orWhere(function($q2) use ($bj){
+            return $q2->where('priority','=',$bj->priority)
+            ->whereDateTime('created_at','<',$bj->created_at);
+        });
+    })->count() == 0;
+
+    return $no_others_with_higer_priority;
 }
 }
 
 if(!function_exists('backgroundJobsWaitingDelaySeconds')){
 function backgroundJobsWaitingDelaySeconds(){
-    return 5;
+    return 2;
 }
 }
 
 if(!function_exists('backgroundJobWaitForRunningJobs')){
-function backgroundJobWaitForRunningJobs($bjid){
-    while(backgroundJobFreeSpot($bjid) === false){//@HACK: soft guard, not atomic, should add a new table too coordinate
-        update_background_job_log($bjid,[
-            'status' => 'WAITING',
-            'pid'    => getmypid(),
-            'ran_at' => date('Y-m-d h:i:s')
-        ]);
+function backgroundJobWaitForRunningJobs($bj){
+    $bj = update_background_job_log($bj,[
+        'status' => 'WAITING',
+        'pid'    => getmypid(),
+    ]);
+    while(backgroundJobFreeSpot($bj) === false){//@HACK: soft guard, not atomic, should add a new table to coordinate
         sleep(backgroundJobsWaitingDelaySeconds());
     }
+    return $bj;
 }
 }
 
@@ -66,12 +82,9 @@ function backgroundJobValidMethod(string $class,string $method){
 }
 }
 
-if (!function_exists('runBackgroundJobById')){
-function runBackgroundJobById($bjid) {
-    $bj = DB::table('background_jobs')
-    ->where('id',$bjid)
-    ->first();
-
+if (!function_exists('executeBackgroundJob')){
+function executeBackgroundJob($bj) {
+    $bjid = $bj->id;
     $log_file = $bj->log_file;
     $error_file = $bj->error_file;
 
@@ -100,7 +113,7 @@ function runBackgroundJobById($bjid) {
 }
 
 if (!function_exists('runBackgroundJob')){
-function runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds){
+function runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds,int $priority){
     $created_at = date('Y-m-d h:i:s');
     $bjid = DB::table('background_jobs')
     ->insertGetId([
@@ -110,6 +123,7 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
         'status' => 'CREATED',
         'tries' => $tries,
         'delay_seconds' => $delay_seconds,
+        'priority' => $priority,
         'pid' => null,
         'exit_code' => null,
         'log_file' => null,
@@ -122,27 +136,27 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
     $uniqid = uniqid();
     $filename = storage_path("$bjid-$uniqid");//@HACK: "posible" name clash
 
-    DB::table('background_jobs')
-    ->where('id',$bjid)
-    ->update([
+    [$ok,$bj] = update_background_job((object)['id' => $bjid],[
         'log_file' => $filename.'.log',
         'error_file' => $filename.'.err',
     ]);
 
-    return runBackgroundJobById($bjid);
+    if($ok === false) throw $bj;
+
+    return executeBackgroundJob($bj);
 }
 }
 
 if (!function_exists('update_background_job')){
-function update_background_job($bjid,$data){
-    if(empty($data)) return [true,DB::table('background_jobs')->where('id',$bjid)->first()];
+function update_background_job($bj,$data){
+    if(empty($data)) return [true,DB::table('background_jobs')->where('id',$bj->id)->first()];
 
     try{
         DB::table('background_jobs')
-        ->where('id',$bjid)
+        ->where('id',$bj->id)
         ->update($data);
 
-        return [true,DB::table('background_jobs')->where('id',$bjid)->first()];
+        return [true,DB::table('background_jobs')->where('id',$bj->id)->first()];
     }
     catch(\Exception $e){//Error accesing DB
         return [false,$e];
@@ -162,10 +176,10 @@ function echo_stderr(string $string){
 }
 
 if (!function_exists('update_background_job_log')){
-function update_background_job_log($bjid,$data){
-    [$ok,$bj_or_ex] = update_background_job($bjid,$data);
+function update_background_job_log($bj,$data){
+    [$ok,$bj_or_ex] = update_background_job($bj,$data);
 
-    echo_stderr("New value for BackgroundJob = ".$bjid);
+    echo_stderr("New value for BackgroundJob = ".$bj->id);
     if($ok === true){
         echo_stderr(json_encode($bj_or_ex));
     }
@@ -181,11 +195,9 @@ function update_background_job_log($bjid,$data){
 }
 
 if(!function_exists('runBackgroundJobMainThread')){
-function runBackgroundJobMainThread($bjid){
-    $bj = update_background_job_log($bjid,[]);
-
+function runBackgroundJobMainThread($bj){
     if($bj->delay_seconds > 0){
-        $bj = update_background_job_log($bjid,[
+        $bj = update_background_job_log($bj,[
             'status' => 'WAITING',
             'pid'    => getmypid(),
             'ran_at' => date('Y-m-d h:i:s')
@@ -193,9 +205,9 @@ function runBackgroundJobMainThread($bjid){
         sleep($bj->delay_seconds);
     }
 
-    backgroundJobWaitForRunningJobs($bjid);
+    $bj = backgroundJobWaitForRunningJobs($bj);
 
-    $bj = update_background_job_log($bjid,[
+    $bj = update_background_job_log($bj,[
         'status' => 'RUNNING',
         'pid'    => getmypid(),
         'ran_at' => date('Y-m-d h:i:s')
@@ -209,14 +221,14 @@ function runBackgroundJobMainThread($bjid){
             $output = $obj->{$bj->method}($parameters,$bj);
             echo json_encode($output);
 
-            $bj = update_background_job_log($bjid,[
+            $bj = update_background_job_log($bj,[
                 'status'=> 'DONE',
                 'tries' => $bj->tries !== null? ($bj->tries-1) : null,
                 'exit_code' => 0,
                 'done_at' => date('Y-m-d h:i:s')
             ]);
 
-            return;
+            return $bj;
         }
         catch(\Exception $e){
             echo_stderr("Failed try #{$bj->tries}\r\n");
@@ -226,7 +238,7 @@ function runBackgroundJobMainThread($bjid){
 
             $bj->tries--;
             if($bj->tries <= 0){
-                $bj = update_background_job_log($bjid,[
+                $bj = update_background_job_log($bj,[
                     'status'=> 'ERROR',
                     'tries' => 0,
                     'exit_code' => 1,
@@ -235,7 +247,7 @@ function runBackgroundJobMainThread($bjid){
                 exit(1);
             }
             else{
-                $bj = update_background_job_log($bjid,[
+                $bj = update_background_job_log($bj,[
                     'tries' => $bj->tries
                 ]);
             }
