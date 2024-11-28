@@ -15,6 +15,7 @@ This implementation uses process forking. I have found that other solutions such
 
 3- Open the project in your command line and input these commands
     npm install && npm run build
+    
     composer run dev
 
 4- Go to http://localhost:8000 in your browser
