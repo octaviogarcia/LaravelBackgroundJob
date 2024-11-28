@@ -1,66 +1,52 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## About
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is a test task for a recruitment. It's the implementation of a background job system in PHP without using Laravel's queue.
 
-## About Laravel
+## Implementation
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This implementation uses process forking. I have found that other solutions such as supervisord/cron tend to break in production.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Using the application
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1- Git clone the application from Github
+2- Install PHP, Composer and Laravel following [these instructions](https://laravel.com/docs/11.x#installing-php)
+    NOTE: If you are on windows, change "'https://php.new/install/windows/8.3" to "'https://php.new/install/windows" in the installation command.
+3- Open the project in your command line and input these commands
+    npm install && npm run build
+    composer run dev
+4- Go to http://localhost:8000 in your browser
+5- You'll see on the left and a panel with inputs on the right. 
+    Class -> Class to use in the background job.
+    Method -> Method to use in the background job.
+    Parameters -> Parameters sent to Class::method, must be valid JSON.
+    Tries -> Maximum tries for failing jobs. Defaults to 1.  
+        If you leave it empty, it defaults to infinite tries.
+    Delay -> Delay in seconds until the job starts running.
+    Priority -> When jobs are waiting on Queue, those with higher priority will start running first.
 
-## Learning Laravel
+6- These are the classes and methods
+    Trivial::run -> doesn't use arguments. Immediately returns 1.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+    Trivial2::run -> doesn't use arguments. Immediately returns 2.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+    ThrowException::run -> Throws an exception such to make the job fail. 
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+    ThrowException::run2 -> Throws another exception such to make the job fail.
 
-## Laravel Sponsors
+    ThrowException::args -> Returns the arguments immediately.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+    Sleepy::run -> Uses argument in the form of {"seconds" : YOUR_SECONDS_HERE}.  
+    If it doesn't find the correct JSON argument, it defaults to 10 seconds.
+    This is used to simulate a long running job.
 
-### Premium Partners
+    Fails::run ->  Uses argument in the form of {"fails" : YOUR_FAILS_HERE}.
+    If it doesn't find the correct JSON argument, it defaults to 0 fails (no fails).
+    This is used to simulate a failing application, such that you need to configure tries.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    AverageRandoms::run -> Uses argument in the form of {"min" : YOUR_MIN,"max": YOUR_MAX, "samples": YOUR_SAMPLES}
+    Uses default values of min=0, max=1, samples =  80000000.
+    This is similitar to Sleepy::run but it does an actual calculation. It averages #samle rand(min,max) calls.
+    With default values one would expect a return close to ~0.5
 
 ## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+  This code is licensed under the [Mozilla Public License Version 2.0](https://www.mozilla.org/media/MPL/2.0/index.f75d2927d3c1.txt)
