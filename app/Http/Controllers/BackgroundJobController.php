@@ -27,6 +27,7 @@ class BackgroundJobController extends Controller
             'class' => 'required',
             'method' => 'required',
             'parameters' => ['nullable','json'],
+            'tries' => ['nullable','integer','min:1'],
         ],[],[])->after(function($v){
             if($v->errors()->any()) return;
             $d = $v->getData();
@@ -39,7 +40,8 @@ class BackgroundJobController extends Controller
         })->validate();
 
         $parameters = $request->parameters ?? '{}';
-        [$bjid,$started,$command,$output] = runBackgroundJob($request->class,$request->method,$parameters);
+        $tries = $request->tries ?? null;//null = infinite tries
+        [$bjid,$started,$command,$output] = runBackgroundJob($request->class,$request->method,$parameters,$tries);
         
         if($started === false){
             DB::table('background_jobs')

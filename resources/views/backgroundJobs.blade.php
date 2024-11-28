@@ -29,6 +29,7 @@
                     <style>
                         table {
                             border-collapse: collapse;
+                            font-size: 85%;
                         }
                         table thead {
                             border: 1px solid black;
@@ -38,6 +39,7 @@
                             border-right: 1px dashed lightgrey;
                             border-top: 1px solid grey;
                             border-bottom: 1px solid grey;
+                            font-size: 75%;
                         }
                         table.flex-columns tr {
                             display: flex;
@@ -46,10 +48,15 @@
                         table.flex-columns td {
                             overflow-wrap: anywhere;
                         }
-                        table.flex-columns th:not(.overload-flex),
-                        table.flex-columns td:not(.overload-flex)
+                        table.flex-columns th,
+                        table.flex-columns td
                         {
                             flex: 1;
+                        }
+                        table.flex-columns th.small_attribute,
+                        table.flex-columns td.small_attribute
+                        {
+                            flex: 0.5;
                         }
                         table[data-js-autoreload-table] [data-cast-row]{
                             display: none;
@@ -58,13 +65,14 @@
                     <table class="flex-columns" style="width: 100%;">
                         <thead>
                             <tr>
-                                <th data-cast-col="id">Id</th>
+                                <th data-cast-col="id" class="small_attribute">Id</th>
                                 <th data-cast-col="class">Class</th>
                                 <th data-cast-col="method">Method</th>
                                 <th data-cast-col="parameters">Parameters</th>
                                 <th data-cast-col="status">Status</th>
-                                <th data-cast-col="pid">PID</th>
-                                <th data-cast-col="exit_code">EXIT CODE</th>
+                                <th data-cast-col="tries" class="small_attribute">Tries</th>
+                                <th data-cast-col="pid" class="small_attribute">PID</th>
+                                <th data-cast-col="exit_code" class="small_attribute">EXIT CODE</th>
                                 <th data-cast-col="log_file">Log File</th>
                                 <th data-cast-col="error_file">Error File</th>
                                 <th data-cast-col="created_at">Created</th>
@@ -77,13 +85,14 @@
                         <table class="flex-columns" style="width: 100%;" data-js-autoreload-table data-miliseconds=1500 data-method="GET" data-action="/backgroundJobs">
                             <tbody>
                                 <tr data-cast-row>
-                                    <td data-cast-col="id">Id</td>
+                                    <td data-cast-col="id" class="small_attribute">Id</td>
                                     <td data-cast-col="class">Class</td>
                                     <td data-cast-col="method">Method</td>
                                     <td data-cast-col="parameters">Parameters</td>
                                     <td data-cast-col="status">Status</td>
-                                    <td data-cast-col="pid">PID</td>
-                                    <td data-cast-col="exit_code">EXIT CODE</td>
+                                    <td data-cast-col="tries" class="small_attribute">Tries</td>
+                                    <td data-cast-col="pid" class="small_attribute">PID</td>
+                                    <td data-cast-col="exit_code" class="small_attribute">EXIT CODE</td>
                                     <td data-cast-col="log_file">Log File</td>
                                     <td data-cast-col="error_file">Error File</td>
                                     <td data-cast-col="created_at">Created</td>
@@ -112,6 +121,10 @@
                         <h6>Parameters</h6>
                         <textarea name='parameters' style="width: 100%;border: 1px solid darkcyan;">
                         </textarea>
+                    </div>
+                    <div style="width: 100%;border: 1px solid black;">
+                        <h6>Tries</h6>
+                        <input name="tries" type='number' style="width: 100%;border: 1px solid darkcyan;">
                     </div>
                     <button data-js-submit-form  style="width: 100%;border: 1px solid black;background: grey;color: white;text-shadow: 1px 1px 2px black;">Run</button>
                     <div style="width: 100%;border: 1px solid black;">

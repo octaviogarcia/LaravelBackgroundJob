@@ -7,6 +7,7 @@ function backgroundJobsGetAllowedClasses(){
         App\BackgroundJobs\Trivial2::class,
         App\BackgroundJobs\ThrowException::class,
         App\BackgroundJobs\Sleepy::class,
+        App\BackgroundJobs\Fails::class,
     ];
 }
 }
@@ -74,7 +75,7 @@ function runBackgroundJobById($bjid) {
 }
 
 if (!function_exists('runBackgroundJob')){
-function runBackgroundJob(string $class,string $method,string $parameters){
+function runBackgroundJob(string $class,string $method,string $parameters,?int $tries){
     $created_at = date('Y-m-d h:i:s');
     $bjid = DB::table('background_jobs')
     ->insertGetId([
@@ -82,6 +83,7 @@ function runBackgroundJob(string $class,string $method,string $parameters){
         'method' => $method,
         'parameters' => $parameters,
         'status' => 'CREATED',
+        'tries' => $tries,
         'pid' => null,
         'exit_code' => null,
         'log_file' => null,
@@ -92,7 +94,6 @@ function runBackgroundJob(string $class,string $method,string $parameters){
     ]);
 
     $uniqid = uniqid();
-    //$filename = storage_path("$bjid|$class-$method-$uniqid");//@HACK: "posible" name clash
     $filename = storage_path("$bjid-$uniqid");//@HACK: "posible" name clash
 
     DB::table('background_jobs')
@@ -104,4 +105,21 @@ function runBackgroundJob(string $class,string $method,string $parameters){
 
     return runBackgroundJobById($bjid);
 }
+}
+
+if (!function_exists('update_background_job')){
+    function update_background_job($bjid,$data){
+        if(empty($data)) return [true,DB::table('background_jobs')->where('id',$bjid)->first()];
+
+        try{
+            DB::table('background_jobs')
+            ->where('id',$bjid)
+            ->update($data);
+
+            return [true,DB::table('background_jobs')->where('id',$bjid)->first()];
+        }
+        catch(\Exception $e){//Error accesing DB
+            return [false,$e];
+        }
+    }
 }
