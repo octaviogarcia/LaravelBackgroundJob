@@ -21,7 +21,7 @@ This implementation uses process forking. I have found that other solutions such
 
 4- Go to http://localhost:8000 in your browser
 
-5- You'll see on the left and a panel with inputs on the right. 
+5- You'll see on the left a table with background jobs (empty) and a panel with inputs on the right. 
 
     Class -> Class to use in the background job.
     Method -> Method to use in the background job.
