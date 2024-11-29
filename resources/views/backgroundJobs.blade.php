@@ -91,7 +91,7 @@
                             </tr>
                         </thead>
                     </table>
-                    <div style="height: 80vh;overflow-y: scroll;scrollbar-gutter: stable both-edges;">
+                    <div style="height: 80vh;overflow-y: scroll;scrollbar-gutter: stable both-edges;border: 1px solid black;">
                         <table class="flex-columns" style="width: 100%;" data-js-autoreload-table data-miliseconds=1500 data-method="GET" data-action="/backgroundJobs">
                             <tbody>
                                 <tr data-cast-row>
