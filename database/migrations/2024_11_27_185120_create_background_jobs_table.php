@@ -22,8 +22,8 @@ return new class extends Migration
             $table->integer('priority')->default(100);
             $table->integer('pid')->nullable();
             $table->integer('exit_code')->nullable();
+            $table->text('output')->nullable();
             $table->string('log_file')->nullable();
-            $table->string('error_file')->nullable();
             $table->string('created_at');
             $table->string('ran_at')->nullable();
             $table->string('done_at')->nullable();

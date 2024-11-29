@@ -75,8 +75,8 @@
                                 <th data-cast-col="priority" class="small_attribute">Priority</th>
                                 <th data-cast-col="pid" class="small_attribute">PID</th>
                                 <th data-cast-col="exit_code" class="small_attribute">EXIT CODE</th>
+                                <th data-cast-col="output">Output</th>
                                 <th data-cast-col="log_file">Log File</th>
-                                <th data-cast-col="error_file">Error File</th>
                                 <th data-cast-col="created_at">Created</th>
                                 <th data-cast-col="ran_at">Ran</th>
                                 <th data-cast-col="done_at">Done</th>
@@ -97,8 +97,8 @@
                                     <td data-cast-col="priority" class="small_attribute">Priority</td>
                                     <td data-cast-col="pid" class="small_attribute">PID</td>
                                     <td data-cast-col="exit_code" class="small_attribute">EXIT CODE</td>
+                                    <td data-cast-col="output">Output</td>
                                     <td data-cast-col="log_file">Log File</td>
-                                    <td data-cast-col="error_file">Error File</td>
                                     <td data-cast-col="created_at">Created</td>
                                     <td data-cast-col="ran_at">Ran</td>
                                     <td data-cast-col="done_at">Done</td>
@@ -109,6 +109,10 @@
                 </div>
                 <form style="flex: 1;" method='POST' action='/runBackgroundJob' data-output-selector="#runBackgroundJobOutput">
                     <h5>Panel</h5>
+                    <div style="width: 100%;border: 1px solid black;">
+                        <h6>Rerun ID (Empty for new)</h6>
+                        <input name="id" style="width: 100%;border: 1px solid darkcyan;">
+                    </div>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Class</h6>
                         <select name='class' style="width: 100%;border: 1px solid darkcyan;">
@@ -150,7 +154,7 @@
     </body>
 </html>
 
-<script src='https://code.jquery.com/jquery-3.7.1.js' type="text/javascript"></script>
+<script src='/js/jquery-3.7.1.js' type="text/javascript"></script>
 <script type="text/javascript">
 $(function(){
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });

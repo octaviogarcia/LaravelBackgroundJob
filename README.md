@@ -92,6 +92,9 @@ Global functions defined (that may also be overloaded):
   - backgroundJobsMaxRunning(): int  
     Maximum jobs to be running at the same time. Currently "2" (easier for testing). NULL for infinite
 
+  - backgroundJobLogFile(BackgroundJobId): string  
+    Path to a file where all logging will be appended.
+
   - backgroundJobFreeSpot(): bool  
     Logic for waiting/running
 

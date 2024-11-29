@@ -19,6 +19,12 @@ function backgroundJobsMaxRunning(){
 }
 }
 
+if(!function_exists('backgroundJobLogFile')){
+function backgroundJobLogFile($bjid){
+    return storage_path('background_jobs_errors.log');
+}
+}
+
 if(!function_exists('backgroundJobFreeSpot')){
 function backgroundJobFreeSpot($bj){
     $max_jobs = backgroundJobsMaxRunning();
@@ -90,19 +96,17 @@ if (!function_exists('executeBackgroundJob')){
 function executeBackgroundJob($bj) {
     $bjid = $bj->id;
     $log_file = $bj->log_file;
-    $error_file = $bj->error_file;
 
     $php = escapeshellarg(PHP_BINARY);
     $artisan  = escapeshellarg(base_path('artisan'));
     $log_file = escapeshellarg($log_file);
-    $error_file	 = escapeshellarg($error_file);
 
     $final_command = null;
     if(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'){
-        $final_command = "start /B \"\" $php $artisan app:background-job $bjid > $log_file 2> $error_file";
+        $final_command = "start /B \"\" $php $artisan app:background-job $bjid >> $log_file 2>&1";
     }
     else{
-        $final_command = "$php $artisan app:background-job $bjid > $log_file 2> $error_file &";
+        $final_command = "$php $artisan app:background-job $bjid >> $log_file 2>&1 &";
     }
     
     $pipes = null;
@@ -130,20 +134,14 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
         'priority' => $priority,
         'pid' => null,
         'exit_code' => null,
-        'log_file' => null,
-        'error_file' => null,
         'created_at' =>  $created_at,
         'ran_at' => null,
         'done_at' => null,
     ]);
 
-    $uniqid = uniqid();
-    $filename = storage_path("$bjid-$uniqid");//@HACK: "posible" name clash
+    $log_file = backgroundJobLogFile($bjid);
 
-    [$ok,$bj] = updateBackgroundJob((object)['id' => $bjid],[
-        'log_file' => $filename.'.log',
-        'error_file' => $filename.'.err',
-    ]);
+    [$ok,$bj] = updateBackgroundJob((object)['id' => $bjid],compact('log_file'));
 
     if($ok === false) throw $bj;
 
@@ -223,12 +221,12 @@ function runBackgroundJobMainThread($bj){
     while($bj->tries > 0 || $bj->tries === null){
         try{
             $output = $obj->{$bj->method}($parameters,$bj);
-            echo json_encode($output);
-
+            
             $bj = updateBackgroundJobLog($bj,[
                 'status'=> 'DONE',
                 'tries' => $bj->tries !== null? ($bj->tries-1) : null,
                 'exit_code' => 0,
+                'output' => json_encode($output),
                 'done_at' => date('Y-m-d h:i:s')
             ]);
 
