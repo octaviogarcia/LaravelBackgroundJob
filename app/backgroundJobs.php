@@ -221,7 +221,7 @@ function runBackgroundJobMainThread($bj){
     while($bj->tries > 0 || $bj->tries === null){
         try{
             $output = $obj->{$bj->method}($parameters,$bj);
-            
+
             $bj = updateBackgroundJobLog($bj,[
                 'status'=> 'DONE',
                 'tries' => $bj->tries !== null? ($bj->tries-1) : null,

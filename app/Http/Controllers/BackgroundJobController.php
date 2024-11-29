@@ -41,7 +41,7 @@ class BackgroundJobController extends Controller
         })->validate();
 
         $parameters = $request->parameters ?? '{}';
-        $tries = $request->tries ?? 1;//null = infinite tries
+        $tries = $request->tries ?? 1;
         $delay_seconds = $request->delay_seconds ?? 0;
         $priority = $request->priority ?? 0;
         [$bjid,$started,$command] = runBackgroundJob($request->class,$request->method,$parameters,$tries,$delay_seconds,$priority);
@@ -59,6 +59,28 @@ class BackgroundJobController extends Controller
         $out .= '<br>';
         $out .= $command;
         return $out;
+    }
+
+    public function getBackgroundJob(Request $request){
+        Validator::make($request->all(), [
+            'id' => 'required|exists:background_jobs,id',
+        ],[],[])->after(function($v){})->validate();
+
+        [$ok,$bj] = updateBackgroundJob((object)['id' => $request->id],[]);
+        if($ok === false) throw $bj;
+
+        return $bj;
+    }
+
+    public function getBackgroundJobLog(Request $request){
+        Validator::make($request->all(), [
+            'id' => 'required|exists:background_jobs,id',
+        ],[],[])->after(function($v){})->validate();
+
+        [$ok,$bj] = updateBackgroundJob((object)['id' => $request->id],[]);
+        if($ok === false) throw $bj;
+
+        return file_get_contents($bj->log_file);
     }
 
     public function backgroundJobs(Request $request){

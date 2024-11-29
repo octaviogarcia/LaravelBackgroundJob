@@ -107,11 +107,15 @@
                         </table>
                     </div>
                 </div>
-                <form style="flex: 1;" method='POST' action='/runBackgroundJob' data-output-selector="#runBackgroundJobOutput">
+                <form data-background-job-form style="flex: 1;" method='POST' action='/runBackgroundJob'>
                     <h5>Panel</h5>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Rerun ID (Empty for new)</h6>
                         <input name="id" style="width: 100%;border: 1px solid darkcyan;">
+                        <div style="display: flex;flex-direction: row;">
+                            <button data-js-load="/getBackgroundJob"  style="width: 100%;border: 1px solid black;background: darkcyan;color: white;text-shadow: 1px 1px 2px black;">Load Data For Rerun</button>
+                            <button data-js-view-log="/getBackgroundJobLog"  style="width: 100%;border: 1px solid black;background: orange;color: black;text-shadow: 1px 1px 2px white;">View Log</button>
+                        </div>
                     </div>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Class</h6>
@@ -142,10 +146,10 @@
                         <h6>Priority</h6>
                         <input name="priority" type='number' style="width: 100%;border: 1px solid darkcyan;">
                     </div>
-                    <button data-js-submit-form  style="width: 100%;border: 1px solid black;background: grey;color: white;text-shadow: 1px 1px 2px black;">Run</button>
+                    <button data-js-submit-form  style="width: 100%;border: 1px solid black;background: darkblue;color: white;text-shadow: 1px 1px 2px black;">Run</button>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Return</h6>
-                        <p id="runBackgroundJobOutput"  style="width: 100%;border: 1px solid black;color: darkcyan;background: lightgray;height: 10em;overflow-y: scroll;">&nbsp;</p>
+                        <p data-output style="width: 100%;border: 1px solid black;color: darkcyan;background: lightgray;height: 10em;overflow-y: scroll;">&nbsp;</p>
                     </div>
                 </form>
             </div>
@@ -158,24 +162,53 @@
 <script type="text/javascript">
 $(function(){
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
-    $('form [data-js-submit-form]').click(function(e){
-        e.preventDefault();
-        const tgt = $(e.currentTarget);
-        const form = tgt.closest('form');
-        const output = $(form.attr('data-output-selector'));
-        output.empty();
-        $.ajax({
-            url: form.attr('action'),
-            type: form.attr('method'),
-            data: Object.fromEntries(new FormData(form[0]).entries()),
-            success: function(result) {
-                output.append(result);
-                $('table[data-js-autoreload-table]').trigger('search');
-            },
-            error: function( response ) {
-                const errors = response?.responseJSON?.errors ?? {};
-                output.empty().append(JSON.stringify(errors));
-            }
+    $('form[data-background-job-form]').each(function(_,fobj){
+        const form = $(fobj);
+
+        form.find('[data-js-submit-form]').click(function(e){
+            e.preventDefault();
+            const tgt = $(e.currentTarget);
+            const output = form.find('[data-output]'); 
+            output.empty();
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr('method'),
+                data: Object.fromEntries(new FormData(form[0]).entries()),
+                success: function(result) {
+                    output.append(result);
+                    $('table[data-js-autoreload-table]').trigger('search');
+                },
+                error: function( response ) {
+                    const errors = response?.responseJSON?.errors ?? {};
+                    output.append(JSON.stringify(errors));
+                }
+            });
+        });
+
+        form.find('[data-js-load]').click(function(e){
+            e.preventDefault();
+            const tgt = $(e.currentTarget);
+            $.ajax({
+                url: tgt.attr('data-js-load'),
+                type: 'GET',
+                data: Object.fromEntries(new FormData(form[0]).entries()),
+                success: function(backgroundJob) {
+                    for(const k in backgroundJob){
+                        form.find(`[name="${k}"]`).val(backgroundJob[k]);
+                    }
+                },
+                error: function( response ) {
+                    const errors = response?.responseJSON?.errors ?? {};
+                    output.empty().append(JSON.stringify(errors));
+                }
+            });
+        });
+
+        form.find('[data-js-view-log]').click(function(e){
+            e.preventDefault();
+            const tgt = $(e.currentTarget);
+            const id = Object.fromEntries(new FormData(form[0]).entries()).id;
+            window.open(tgt.attr('data-js-view-log')+'?id='+id);
         });
     });
 
@@ -206,7 +239,7 @@ $(function(){
                     console.log(response);
                 }
             });
-        })
+        });
 
         setInterval(function(){ T.trigger('search'); },parseInt(miliseconds));
     });
