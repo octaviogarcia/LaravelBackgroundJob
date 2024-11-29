@@ -2,8 +2,6 @@
 
 This is a test task for a recruitment. It's the implementation of a background job system in PHP without using Laravel's queue.
 
-![Application Screenshot](Screenshot.png)
-
 ## Implementation
 
 This implementation uses process forking. I have found that other solutions such as supervisord/cron tend to break in production.
