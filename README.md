@@ -89,43 +89,43 @@ Global functions defined (that may also be overloaded):
   - backgroundJobsGetAllowedClasses(): array  
     Returns an array of allowed classes
 
-  - backgroundJobsMaxRunning(): int 
+  - backgroundJobsMaxRunning(): int  
     Maximum jobs to be running at the same time. Currently "2" (easier for testing). NULL for infinite
 
   - backgroundJobFreeSpot(): bool  
     Logic for waiting/running
 
-  - backgroundJobsWaitingDelaySeconds(): int
+  - backgroundJobsWaitingDelaySeconds(): int  
     Seconds to wait between retries for free spot.
 
-  - backgroundJobWaitForRunningJobs(BackgroundJob): BackgroundJob
+  - backgroundJobWaitForRunningJobs(BackgroundJob): BackgroundJob  
     Hangs the job until it finds a free spot
 
-  - backgroundJobValidClass(string $class): bool
+  - backgroundJobValidClass(string $class): bool  
     Validates that a class is valid (only used in frontend)
 
-  - backgroundJobValidMethod(string $class,string $method): bool
+  - backgroundJobValidMethod(string $class,string $method): bool  
     Validates that a class and a method are valid (only used in frontend)
 
-  - executeBackgroundJob(BackgroundJob): [int,bool,string,UNUSED]
-    Executes a background job (forks into a background-job Laravel command).
-    Returns: [backgroundJobId,executed,output,UNUSED]
+  - executeBackgroundJob(BackgroundJob): [int,bool,string]  
+    Executes a background job (forks into a background-job Laravel command).  
+    Returns: [backgroundJobId,executed,output]
 
-  - **runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds,int $priority)**
-    Returns: [backgroundJobId,executed,output,UNUSED]
+  - **runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds,int $priority)**  
+    Returns: [backgroundJobId,executed,output]  
     Creates a background job with the argument data and sets it off to run.
 
-  - updateBackgroundJob(BackGroundjob,array $data) : [bool,BackgroundJob|Exception]
-    Returns: [true,BackgroundJob] or [false,Exception]
+  - updateBackgroundJob(BackGroundjob,array $data) : [bool,BackgroundJob|Exception]  
+    Returns: [true,BackgroundJob] or [false,Exception]  
     Updates the BackGroundjob with the attributes in $data
 
-  - echoStderr(string): void
+  - echoStderr(string): void  
     Outputs to stderr with timestamps, used for logging
 
-  - updateBackgroundJobLog(BackGroundjob,array $data) : [BackgroundJob]
+  - updateBackgroundJobLog(BackGroundjob,array $data) : [BackgroundJob]  
     Updates the BackGroundjob with the attributes in $data. If an error occurs, it logs into stderr and exits with code 1.
 
-  - runBackgroundJobMainThread(BackGroundjob) : void
+  - runBackgroundJobMainThread(BackGroundjob) : void  
     Runs the background job, used after forking but It might also be used by the main Laravel application
 
 NOTE (Quirk):  
