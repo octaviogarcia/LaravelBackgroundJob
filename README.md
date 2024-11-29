@@ -128,8 +128,8 @@ Global functions defined (that may also be overloaded):
     Returns: [true,BackgroundJob] or [false,Exception]  
     Updates the BackGroundjob with the attributes in $data and returns it
 
-  - echoStderr(string): void  
-    Outputs to stderr with timestamps, used for logging
+  - echoFile(string $path,string $output): void  
+    Outputs to file indicated in path with timestamps, used for logging
 
   - updateBackgroundJobLog(BackGroundjob,array $data) : [BackgroundJob]  
     Updates the BackGroundjob with the attributes in $data. If an error occurs, it logs into stderr and exits with code 1.

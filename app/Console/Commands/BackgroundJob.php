@@ -30,7 +30,7 @@ class BackgroundJob extends Command
         $bj = getBackgroundJob($bjid);
 
         if(is_null($bj)){
-            echo_stderr("Background Job '$bjid' not found");
+            echoFile('php://stderr',"Background Job '$bjid' not found");
             return;
         }
 

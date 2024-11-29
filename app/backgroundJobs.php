@@ -60,7 +60,7 @@ function backgroundJobsWaitingDelaySeconds(){
 
 if(!function_exists('backgroundJobWaitForRunningJobs')){
 function backgroundJobWaitForRunningJobs($bj){
-    $bj = updateBackgroundJobLog($bj,[
+    [$ok,$bj] = updateBackgroundJobLog($bj,[
         'status' => 'WAITING',
         'pid'    => getmypid(),
     ]);
@@ -102,10 +102,10 @@ function executeBackgroundJob($bj) {
 
     $final_command = null;
     if(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'){
-        $final_command = "start /B \"\" $php $artisan app:background-job $bjid >> $log_file 2>&1";
+        $final_command = "start /B \"\" $php $artisan app:background-job $bjid 2>&1";
     }
     else{
-        $final_command = "$php $artisan app:background-job $bjid >> $log_file 2>&1 &";
+        $final_command = "$php $artisan app:background-job $bjid 2>&1 &";
     }
     
     $pipes = null;
@@ -151,6 +151,30 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
     return executeBackgroundJob($bj);
 }
 }
+if (!function_exists('cancelBackgroundJobByID')){
+function cancelBackgroundJobByID($bjid){
+    $bj = getBackgroundJob($bjid);
+    if($bj === null)
+        return [false,null];
+    if(in_array($bj->status,['CREATED','DONE','KILLED','ERROR']))
+        return [true,$bj];
+
+    if($bj->pid !== null){
+        $final_command = null;
+        if(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'){
+            $final_command = "taskkill /pid {$bj->pid} /f";
+        }
+        else{
+            $final_command = "kill -9 {$bj->pid}";
+        }
+        echoFile($bj->log_file,"\r\nExecuting: ".$final_command);
+        echoFile($bj->log_file,"\r\nOutput: ".shell_exec($final_command));
+    }
+
+    return updateBackgroundJobLog($bj,['status' => 'KILLED'],$bj->log_file,false);
+}
+}
+
 
 if (!function_exists('updateBackgroundJob')){
 function updateBackgroundJob($bj,$data){
@@ -169,9 +193,9 @@ function updateBackgroundJob($bj,$data){
 }
 }
 
-if (!function_exists('echoStderr')){
-function echoStderr(string $string){
-    $f = fopen('php://stderr','a');
+if (!function_exists('echoFile')){
+function echoFile($fpath,string $string){
+    $f = fopen($fpath,'a');
     fwrite($f,"\r\n");
     fwrite($f,date('Y-m-d h:i:s'));
     fwrite($f,"\r\n");
@@ -181,21 +205,23 @@ function echoStderr(string $string){
 }
 
 if (!function_exists('updateBackgroundJobLog')){
-function updateBackgroundJobLog($bj,$data){
+function updateBackgroundJobLog($bj,$data,$exit_on_fail = true){
     [$ok,$bj_or_ex] = updateBackgroundJob($bj,$data);
 
-    echoStderr("New value for BackgroundJob = ".$bj->id);
+    echoFile($bj->log_file,"New value for BackgroundJob = ".$bj->id);
     if($ok === true){
-        echoStderr(json_encode($bj_or_ex));
+        echoFile($bj->log_file,json_encode($bj_or_ex));
     }
     else{
-        echoStderr("Error setting values");
-        echoStderr(json_encode($data));
-        echoStderr($bj_or_ex->getTraceAsString());
-        exit(1);
+        echoFile($bj->log_file,"Error setting values");
+        echoFile($bj->log_file,json_encode($data));
+        echoFile($bj->log_file,$bj_or_ex->getTraceAsString());
+        if($exit_on_fail){
+            exit(1);
+        }
     }
 
-    return $bj_or_ex;
+    return [$ok,$bj_or_ex];
 }
 }
 
@@ -217,7 +243,7 @@ function deleteBackgroundJob($bjid){
 if(!function_exists('runBackgroundJobMainThread')){
 function runBackgroundJobMainThread($bj){
     if($bj->delay_seconds > 0){
-        $bj = updateBackgroundJobLog($bj,[
+        [$ok,$bj] = updateBackgroundJobLog($bj,[
             'status' => 'WAITING',
             'pid'    => getmypid(),
             'ran_at' => date('Y-m-d h:i:s')
@@ -227,7 +253,7 @@ function runBackgroundJobMainThread($bj){
 
     $bj = backgroundJobWaitForRunningJobs($bj);
 
-    $bj = updateBackgroundJobLog($bj,[
+    [$ok,$bj] = updateBackgroundJobLog($bj,[
         'status' => 'RUNNING',
         'pid'    => getmypid(),
         'ran_at' => date('Y-m-d h:i:s')
@@ -240,7 +266,7 @@ function runBackgroundJobMainThread($bj){
         try{
             $output = $obj->{$bj->method}($parameters,$bj);
 
-            $bj = updateBackgroundJobLog($bj,[
+            [$ok,$bj] = updateBackgroundJobLog($bj,[
                 'status'=> 'DONE',
                 'tries' => $bj->tries !== null? ($bj->tries-1) : null,
                 'exit_code' => 0,
@@ -251,14 +277,14 @@ function runBackgroundJobMainThread($bj){
             return $bj;
         }
         catch(\Exception $e){
-            echoStderr("Failed try #{$bj->tries}\r\n");
-            echoStderr($e->getTraceAsString());
+            echoFile($bj->log_file,"\r\nFailed try #{$bj->tries}");
+            echoFile($bj->log_file,"\r\n$e->getTraceAsString()");
 
             if($bj->tries === null) continue;
 
             $bj->tries--;
             if($bj->tries <= 0){
-                $bj = updateBackgroundJobLog($bj,[
+                [$ok,$bj] = updateBackgroundJobLog($bj,[
                     'status'=> 'ERROR',
                     'tries' => 0,
                     'exit_code' => 1,
@@ -267,7 +293,7 @@ function runBackgroundJobMainThread($bj){
                 exit(1);
             }
             else{
-                $bj = updateBackgroundJobLog($bj,[
+                [$ok,$bj] = updateBackgroundJobLog($bj,[
                     'tries' => $bj->tries
                 ]);
             }

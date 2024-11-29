@@ -63,6 +63,12 @@
                         h6 {
                             font-weight: bold;
                         }
+                        button:hover {
+                            box-shadow: 0px 0px 0.5em white inset !important;
+                            background: blue !important;
+                            color: white !important;
+                            text-shadow: 0px 0px 1px black !important;
+                        }
                     </style>
                     <table class="flex-columns" style="width: 100%;">
                         <thead>
@@ -114,8 +120,9 @@
                         <h6>Use ID</h6>
                         <input name="id" style="width: 100%;border: 1px solid darkcyan;">
                         <div style="display: flex;flex-direction: row;">
-                            <button data-js-load="/getBackgroundJob"  style="width: 100%;border: 1px solid black;background: darkcyan;color: white;text-shadow: 1px 1px 2px black;">Load Data For Rerun</button>
-                            <button data-js-view-log="/getBackgroundJobLog"  style="width: 100%;border: 1px solid black;background: orange;color: black;text-shadow: 1px 1px 2px white;">View Log</button>
+                            <button data-js-load="/getBackgroundJob"  style="width: 100%;border: 1px solid black;background: darkcyan;color: white;text-shadow: 1px 1px 2px black;font-size: 80%;">Load Data For Rerun</button>
+                            <button data-js-view-log="/getBackgroundJobLog"  style="width: 100%;border: 1px solid black;background: orange;color: black;text-shadow: 1px 1px 2px white;font-size: 80%;">View Log</button>
+                            <button data-js-cancel="/cancelBackgroundJob"  style="width: 100%;border: 1px solid black;background: red;color: black;text-shadow: 1px 1px 2px white;font-size: 80%;">Cancel</button>
                         </div>
                     </div>
                     <div style="width: 100%;font-size: 0.5em;background: gray;">&nbsp;</div>
@@ -148,7 +155,7 @@
                         <h6>Priority</h6>
                         <input name="priority" type='number' style="width: 100%;border: 1px solid darkcyan;">
                     </div>
-                    <button data-js-submit-form  style="width: 100%;border: 1px solid black;background: darkblue;color: white;text-shadow: 1px 1px 2px black;">Run</button>
+                    <button data-js-submit-form  style="width: 100%;border: 1px solid black;background: darkcyan;color: white;text-shadow: 1px 1px 2px black;">Run</button>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Return</h6>
                         <p data-output style="width: 100%;border: 1px solid black;color: darkcyan;background: lightgray;height: 10em;overflow-y: scroll;">&nbsp;</p>
@@ -210,6 +217,23 @@ $(function(){
             const tgt = $(e.currentTarget);
             const id = Object.fromEntries(new FormData(form[0]).entries()).id;
             window.open(tgt.attr('data-js-view-log')+'?id='+id);
+        });
+
+        form.find('[data-js-cancel]').click(function(e){
+            e.preventDefault();
+            const tgt = $(e.currentTarget);
+            $.ajax({
+                url: tgt.attr('data-js-cancel'),
+                type: 'GET',
+                data: Object.fromEntries(new FormData(form[0]).entries()),
+                success: function() {
+                    $('table[data-js-autoreload-table]').trigger('search');
+                },
+                error: function( response ) {
+                    const errors = response?.responseJSON?.errors ?? {};
+                    output.empty().append(JSON.stringify(errors));
+                }
+            });
         });
     });
 

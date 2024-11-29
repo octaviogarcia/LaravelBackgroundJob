@@ -82,6 +82,17 @@ class BackgroundJobController extends Controller
         return '<pre><code>'.file_get_contents($bj->log_file).'</code></pre>';
     }
 
+    public function cancelBackgroundJob(Request $request){
+        Validator::make($request->all(), [
+            'id' => 'required|exists:background_jobs,id',
+        ],[],[])->after(function($v){})->validate();
+
+        [$ok,$bj] = cancelBackgroundJobByID($request->id);
+        if($ok === false) throw $bj;
+
+        return $bj;
+    }
+
     public function backgroundJobs(Request $request){
         return DB::table('background_jobs')
         ->orderBy('id','desc')
