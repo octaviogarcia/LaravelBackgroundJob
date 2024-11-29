@@ -21,7 +21,7 @@
         @endif
     </head>
     <body class="font-sans antialiased dark:bg-black dark:text-white/50">
-        <header style="text-align: center;color: white;background: gray;text-shadow: 0px 0px 2px black;">Background Jobs test application viewer</header>
+        <header style="text-align: center;color: white;background: gray;text-shadow: 0px 0px 2px black;">Octavio Garcia Aguirre - Background Jobs Viewer</header>
         <main>
             <div style="display: flex;">
                 <div style="flex: 2;">
