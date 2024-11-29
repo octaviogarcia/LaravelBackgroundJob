@@ -118,11 +118,9 @@ Global functions defined (that may also be overloaded):
     Returns: [backgroundJobId,executed,output]  
     Creates a background job with the argument data and sets it off to run.
 
-  - getBackgroundJob(BackgroundJobId): ?BackgroundJob
-    Returns a background job (if it finds it)
-
-  - deleteBackgroundJob(BackgroundJobId): bool
-    Deletes a background job. Returns false if it doesn't find anything
+  - cancelBackgroundJobByID(BackgroundJobId): [bool,BackgroundJob|Exception]
+    Returns: [true,BackgroundJob] or [false,Exception]  
+    Kills the job if it's running and update its status if it wasn't finished
 
   - updateBackgroundJob(BackGroundjob,array $data) : [bool,BackgroundJob|Exception]  
     Returns: [true,BackgroundJob] or [false,Exception]  
@@ -131,8 +129,15 @@ Global functions defined (that may also be overloaded):
   - echoFile(string $path,string $output): void  
     Outputs to file indicated in path with timestamps, used for logging
 
-  - updateBackgroundJobLog(BackGroundjob,array $data) : [BackgroundJob]  
-    Updates the BackGroundjob with the attributes in $data. If an error occurs, it logs into stderr and exits with code 1.
+  - updateBackgroundJobLog(BackGroundjob,array $data,bool $exit_on_fail = true) : [bool,BackgroundJob|Exception] 
+    Updates the BackGroundjob with the attributes in $data. By default, if an error occurs,  
+    it logs into its log_file and exits with code 1.
+  
+  - getBackgroundJob(BackgroundJobId): ?BackgroundJob
+    Returns a background job (if it finds it)
+
+  - deleteBackgroundJob(BackgroundJobId): bool
+    Deletes a background job. Returns false if it doesn't find anything
 
   - runBackgroundJobMainThread(BackGroundjob) : void  
     Runs the background job, used after forking but It might also be used by the main Laravel application
