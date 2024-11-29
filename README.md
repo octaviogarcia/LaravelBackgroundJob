@@ -42,7 +42,6 @@ This implementation uses process forking. I have found that other solutions such
     Method -> Method to use in the background job.
     Parameters -> Parameters sent to Class::method, must be valid JSON.
     Tries -> Maximum tries for failing jobs. Defaults to 1.  
-        If you leave it empty, it defaults to infinite tries.
     Delay -> Delay in seconds until the job starts running.
     Priority -> When jobs are waiting on Queue, those with higher priority will start running first.
 
@@ -84,12 +83,12 @@ Background Jobs Runner: Since the implementation architecture wasn't specified I
   - app/Console/BackgroundJob.php : This Laravel command acts as a proxy such that you can use a full Laravel environment in your job.
 
   - app/BackgroundJobs: this is merely for exemplification. If you are overloading the allowed classes you may put them wherever you want as long as you reference them correctly.  
-  If you return NULL in your implementation, all clases are allowed.
 
 Global functions defined (that may also be overloaded):
 
   - backgroundJobsGetAllowedClasses(): array  
     Returns an array of allowed classes
+    If you return NULL in your implementation, all clases are allowed.
 
   - backgroundJobsMaxRunning(): int  
     Maximum jobs to be running at the same time. Currently "2" (easier for testing). NULL for infinite
@@ -107,10 +106,10 @@ Global functions defined (that may also be overloaded):
     Hangs the job until it finds a free spot
 
   - backgroundJobValidClass(string $class): bool  
-    Validates that a class is valid (only used in frontend)
+    Validates that a class is valid
 
   - backgroundJobValidMethod(string $class,string $method): bool  
-    Validates that a class and a method are valid (only used in frontend)
+    Validates that a class and a method are valid
 
   - executeBackgroundJob(BackgroundJob): [int,bool,string]  
     Executes a background job (forks into a background-job Laravel command).  
