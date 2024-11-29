@@ -73,19 +73,17 @@ function backgroundJobWaitForRunningJobs($bj){
 
 if(!function_exists('backgroundJobValidClass')){
 function backgroundJobValidClass(string $class){
-    $valid_class_name = preg_match('/^.*$/',$class) == 1;//@TODO
+    $valid_class_name = preg_match('/^(?:\\\\?[A-Za-z_][A-Za-z0-9_]*)+$/',$class) == 1;
     $allowed_classes = backgroundJobsGetAllowedClasses();
     $class_is_allowed = $allowed_classes === null || in_array($class,$allowed_classes);
-    return $valid_class_name && $class_is_allowed;
+    return $valid_class_name && $class_is_allowed && class_exists($class);
 }
 }
 
 if(!function_exists('backgroundJobValidMethod')){
 function backgroundJobValidMethod(string $class,string $method){
     if(!backgroundJobValidClass($class)) return false;
-    $identifier_regex = '[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*';
-    $method_regex = '/^'.$identifier_regex.'$/';
-    $valid_method_name = preg_match($method_regex,$method) == 1;
+    $valid_method_name = preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$/',$method) == 1;
     $method_exists = method_exists($class,$method);
     return $valid_method_name && $method_exists;
 }
