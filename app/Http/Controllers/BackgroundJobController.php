@@ -47,8 +47,7 @@ class BackgroundJobController extends Controller
         [$bjid,$started,$command] = runBackgroundJob($request->class,$request->method,$parameters,$tries,$delay_seconds,$priority);
         
         if($started === false){
-            DB::table('background_jobs')
-            ->where('id',$bjid)->delete();
+            deleteBackgroundJob($bjid);
             $out = "Error running {$request->class}->{$request->method}($parameters) ID $bjid";
             $out .= '<br>';
             $out .= $command;
@@ -66,8 +65,8 @@ class BackgroundJobController extends Controller
             'id' => 'required|exists:background_jobs,id',
         ],[],[])->after(function($v){})->validate();
 
-        [$ok,$bj] = updateBackgroundJob((object)['id' => $request->id],[]);
-        if($ok === false) throw $bj;
+        $bj = getBackgroundJob($request->id);
+        if($bj === null) throw new \Exception('Not Found');
 
         return $bj;
     }
@@ -77,8 +76,8 @@ class BackgroundJobController extends Controller
             'id' => 'required|exists:background_jobs,id',
         ],[],[])->after(function($v){})->validate();
 
-        [$ok,$bj] = updateBackgroundJob((object)['id' => $request->id],[]);
-        if($ok === false) throw $bj;
+        $bj = getBackgroundJob($request->id);
+        if($bj === null) throw new \Exception('Not Found');
 
         return '<pre><code>'.file_get_contents($bj->log_file).'</code></pre>';
     }

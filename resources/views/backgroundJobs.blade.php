@@ -21,11 +21,10 @@
         @endif
     </head>
     <body class="font-sans antialiased dark:bg-black dark:text-white/50">
-        <header>Background Jobs test application viewer</header>
+        <header style="text-align: center;color: white;background: gray;text-shadow: 0px 0px 2px black;">Background Jobs test application viewer</header>
         <main>
             <div style="display: flex;">
                 <div style="flex: 2;">
-                    <h5>Jobs</h5>
                     <style>
                         table {
                             border-collapse: collapse;
@@ -60,6 +59,9 @@
                         }
                         table[data-js-autoreload-table] [data-cast-row]{
                             display: none;
+                        }
+                        h6 {
+                            font-weight: bold;
                         }
                     </style>
                     <table class="flex-columns" style="width: 100%;">
@@ -108,15 +110,15 @@
                     </div>
                 </div>
                 <form data-background-job-form style="flex: 1;" method='POST' action='/runBackgroundJob'>
-                    <h5>Panel</h5>
                     <div style="width: 100%;border: 1px solid black;">
-                        <h6>Rerun ID (Empty for new)</h6>
+                        <h6>Use ID</h6>
                         <input name="id" style="width: 100%;border: 1px solid darkcyan;">
                         <div style="display: flex;flex-direction: row;">
                             <button data-js-load="/getBackgroundJob"  style="width: 100%;border: 1px solid black;background: darkcyan;color: white;text-shadow: 1px 1px 2px black;">Load Data For Rerun</button>
                             <button data-js-view-log="/getBackgroundJobLog"  style="width: 100%;border: 1px solid black;background: orange;color: black;text-shadow: 1px 1px 2px white;">View Log</button>
                         </div>
                     </div>
+                    <div style="width: 100%;font-size: 0.5em;background: gray;">&nbsp;</div>
                     <div style="width: 100%;border: 1px solid black;">
                         <h6>Class</h6>
                         <select name='class' style="width: 100%;border: 1px solid darkcyan;">
@@ -154,7 +156,6 @@
                 </form>
             </div>
         </main>
-        <footer class="text-center">All rights Octavio Garcia Aguirre 2024</footer>
     </body>
 </html>
 

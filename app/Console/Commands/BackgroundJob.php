@@ -27,8 +27,7 @@ class BackgroundJob extends Command
     public function handle(): void
     {        
         $bjid = $this->argument('id');
-
-        $bj = updateBackgroundJobLog((object)['id' => $bjid],[]);
+        $bj = getBackgroundJob($bjid);
 
         if(is_null($bj)){
             echo_stderr("Background Job '$bjid' not found");

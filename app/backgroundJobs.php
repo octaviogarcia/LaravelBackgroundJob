@@ -71,7 +71,6 @@ function backgroundJobWaitForRunningJobs($bj){
 }
 }
 
-
 if(!function_exists('backgroundJobValidClass')){
 function backgroundJobValidClass(string $class){
     $valid_class_name = preg_match('/^.*$/',$class) == 1;//@TODO
@@ -122,6 +121,10 @@ function executeBackgroundJob($bj) {
 
 if (!function_exists('runBackgroundJob')){
 function runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds,int $priority){
+    if(backgroundJobValidMethod($class,$method) === false){
+        throw new \Exception("$class::$method is not runnable");
+    }
+
     $created_at = date('Y-m-d h:i:s');
     $bjid = DB::table('background_jobs')
     ->insertGetId([
@@ -151,14 +154,14 @@ function runBackgroundJob(string $class,string $method,string $parameters,?int $
 
 if (!function_exists('updateBackgroundJob')){
 function updateBackgroundJob($bj,$data){
-    if(empty($data)) return [true,DB::table('background_jobs')->where('id',$bj->id)->first()];
-
     try{
-        DB::table('background_jobs')
+        $affected = DB::table('background_jobs')
         ->where('id',$bj->id)
         ->update($data);
 
-        return [true,DB::table('background_jobs')->where('id',$bj->id)->first()];
+        if($affected === 0) throw new \Exception("BackgroundJob ID = {$bj->id} not found");
+
+        return [true,getBackgroundJob($bj->id)];
     }
     catch(\Exception $e){//Error accesing DB
         return [false,$e];
@@ -195,6 +198,21 @@ function updateBackgroundJobLog($bj,$data){
     return $bj_or_ex;
 }
 }
+
+if (!function_exists('getBackgroundJob')){
+function getBackgroundJob($bjid){
+    return DB::table('background_jobs')->where('id',$bjid)->first();
+}
+}
+
+
+if (!function_exists('deleteBackgroundJob')){
+function deleteBackgroundJob($bjid){
+    return DB::table('background_jobs')
+    ->where('id',$bjid)->delete() > 0;
+}
+}
+
 
 if(!function_exists('runBackgroundJobMainThread')){
 function runBackgroundJobMainThread($bj){

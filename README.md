@@ -66,7 +66,7 @@ This implementation uses process forking. I have found that other solutions such
 
     AverageRandoms::run -> Uses argument in the form of {"min" : YOUR_MIN,"max": YOUR_MAX, "samples": YOUR_SAMPLES}
     Uses default values of min=0, max=1, samples =  80000000.
-    This is similitar to Sleepy::run but it does an actual calculation. It averages #samle rand(min,max) calls.
+    This is similitar to Sleepy::run but it does an actual calculation. It averages rand(<min>,<max>) with <samples> calls.
     With default values one would expect a return close to ~0.5
 
 ## Implementation Architecture
@@ -118,9 +118,15 @@ Global functions defined (that may also be overloaded):
     Returns: [backgroundJobId,executed,output]  
     Creates a background job with the argument data and sets it off to run.
 
+  - getBackgroundJob(BackgroundJobId): ?BackgroundJob
+    Returns a background job (if it finds it)
+
+  - deleteBackgroundJob(BackgroundJobId): bool
+    Deletes a background job. Returns false if it doesn't find anything
+
   - updateBackgroundJob(BackGroundjob,array $data) : [bool,BackgroundJob|Exception]  
     Returns: [true,BackgroundJob] or [false,Exception]  
-    Updates the BackGroundjob with the attributes in $data
+    Updates the BackGroundjob with the attributes in $data and returns it
 
   - echoStderr(string): void  
     Outputs to stderr with timestamps, used for logging
@@ -130,11 +136,6 @@ Global functions defined (that may also be overloaded):
 
   - runBackgroundJobMainThread(BackGroundjob) : void  
     Runs the background job, used after forking but It might also be used by the main Laravel application
-
-NOTE (Quirk):  
-
-  $bj = updateBackgroundJob((object)['id' => $id],[]) is used to fetch a background job from the Database through the code
-
 
 ## Example Runs
 
