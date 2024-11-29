@@ -2,7 +2,7 @@
 
 This is a test task for a recruitment. It's the implementation of a background job system in PHP without using Laravel's queue.
 
-![Application Screenshot](Screenshot.png)
+![Application Screenshot](Screenshot.png?)
 
 ## Implementation
 
