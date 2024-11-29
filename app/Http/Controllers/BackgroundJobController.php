@@ -80,7 +80,7 @@ class BackgroundJobController extends Controller
         [$ok,$bj] = updateBackgroundJob((object)['id' => $request->id],[]);
         if($ok === false) throw $bj;
 
-        return file_get_contents($bj->log_file);
+        return '<pre><code>'.file_get_contents($bj->log_file).'</code></pre>';
     }
 
     public function backgroundJobs(Request $request){
