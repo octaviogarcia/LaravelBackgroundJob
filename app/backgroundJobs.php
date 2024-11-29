@@ -21,9 +21,13 @@ function backgroundJobsMaxRunning(){
 
 if(!function_exists('backgroundJobFreeSpot')){
 function backgroundJobFreeSpot($bj){
+    $max_jobs = backgroundJobsMaxRunning();
+
+    if(is_null($max_jobs)) return true;
+
     $available_free_spot = DB::table('background_jobs')
     ->where('status','=','RUNNING')
-    ->count() < backgroundJobsMaxRunning();
+    ->count() < $max_jobs;
 
     if($available_free_spot === false) return false;
 
@@ -108,7 +112,7 @@ function executeBackgroundJob($bj) {
         $pipes //What to do with pipes?
     );
 
-    return [$bjid,$P !== false,$final_command,[]];
+    return [$bjid,$P !== false,$final_command];
 };
 }
 
@@ -231,8 +235,8 @@ function runBackgroundJobMainThread($bj){
             return $bj;
         }
         catch(\Exception $e){
-            echo_stderr("Failed try #{$bj->tries}\r\n");
-            echo_stderr($e->getTraceAsString());
+            echoStderr("Failed try #{$bj->tries}\r\n");
+            echoStderr($e->getTraceAsString());
 
             if($bj->tries === null) continue;
 

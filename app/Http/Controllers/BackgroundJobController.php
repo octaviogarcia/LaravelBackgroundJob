@@ -41,10 +41,10 @@ class BackgroundJobController extends Controller
         })->validate();
 
         $parameters = $request->parameters ?? '{}';
-        $tries = $request->tries ?? null;//null = infinite tries
+        $tries = $request->tries ?? 1;//null = infinite tries
         $delay_seconds = $request->delay_seconds ?? 0;
         $priority = $request->priority ?? 0;
-        [$bjid,$started,$command,$output] = runBackgroundJob($request->class,$request->method,$parameters,$tries,$delay_seconds,$priority);
+        [$bjid,$started,$command] = runBackgroundJob($request->class,$request->method,$parameters,$tries,$delay_seconds,$priority);
         
         if($started === false){
             DB::table('background_jobs')
@@ -52,16 +52,12 @@ class BackgroundJobController extends Controller
             $out = "Error running {$request->class}->{$request->method}($parameters) ID $bjid";
             $out .= '<br>';
             $out .= $command;
-            $out .= '<br>';
-            $out .= implode('<br>',$output);
             return $out;
         }
 
         $out = "Created {$request->class}->{$request->method}($parameters) ID $bjid";
         $out .= '<br>';
         $out .= $command;
-        $out .= '<br>';
-        $out .= implode('<br>',$output);
         return $out;
     }
 

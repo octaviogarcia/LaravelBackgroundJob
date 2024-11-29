@@ -10,12 +10,25 @@ This implementation uses process forking. I have found that other solutions such
 
 1- Git clone the application from Github
 
-2- Install PHP, Composer and Laravel following [these instructions](https://laravel.com/docs/11.x#installing-php)
-    NOTE: If you are on windows, change "'https://php.new/install/windows/8.3" to "'https://php.new/install/windows" in the installation command.
+2- Install PHP, Composer and Laravel following [these instructions](https://laravel.com/docs/11.x#installing-php)  
+    
+  NOTE: If you are on windows, change "'https://php.new/install/windows/8.3" to "'https://php.new/install/windows" in the installation command.  
+  
+  Also install [NPM](https://www.npmjs.com/) If you don't have it (check with "npm --version")
 
 3- Open the project in your command line and input these commands
 
-    npm install && npm run build
+    npm install
+
+    npm run build
+
+    composer install
+
+    cp .env.example .env
+
+    php artisan key:generate
+
+    php artisan migrate
 
     composer run dev
 
@@ -55,6 +68,155 @@ This implementation uses process forking. I have found that other solutions such
     Uses default values of min=0, max=1, samples =  80000000.
     This is similitar to Sleepy::run but it does an actual calculation. It averages #samle rand(min,max) calls.
     With default values one would expect a return close to ~0.5
+
+## Implementation Architecture
+Frontend: a single blade template (resources/views/backgroundJobs.blade.php) with inline javascript.
+
+Panel Backend: routing in routes/web.php, and handlers for those routes in app/Http/Controllers/BackgroundJobController.php
+
+Background Jobs Runner: Since the implementation architecture wasn't specified I went as simple as posible:
+  - app/backgroundJobs.php : All functions that engine the application.  
+  You can "overload" these by adding a file in your composer.json such that it loads before.
+  Useful if you want to change things such as allowed classes or maximum jobs allowed to be running.
+
+  - app/Console/BackgroundJob.php : This Laravel command acts as a proxy such that you can use a full Laravel environment in your job.
+
+  - app/BackgroundJobs: this is merely for exemplification. If you are overloading the allowed classes you may put them wherever you want as long as you reference them correctly.  
+  If you return NULL in your implementation, all clases are allowed.
+
+Global functions defined (that may also be overloaded):
+
+  - backgroundJobsGetAllowedClasses(): array  
+    Returns an array of allowed classes
+
+  - backgroundJobsMaxRunning(): int 
+    Maximum jobs to be running at the same time. Currently "2" (easier for testing). NULL for infinite
+
+  - backgroundJobFreeSpot(): bool  
+    Logic for waiting/running
+
+  - backgroundJobsWaitingDelaySeconds(): int
+    Seconds to wait between retries for free spot.
+
+  - backgroundJobWaitForRunningJobs(BackgroundJob): BackgroundJob
+    Hangs the job until it finds a free spot
+
+  - backgroundJobValidClass(string $class): bool
+    Validates that a class is valid (only used in frontend)
+
+  - backgroundJobValidMethod(string $class,string $method): bool
+    Validates that a class and a method are valid (only used in frontend)
+
+  - executeBackgroundJob(BackgroundJob): [int,bool,string,UNUSED]
+    Executes a background job (forks into a background-job Laravel command).
+    Returns: [backgroundJobId,executed,output,UNUSED]
+
+  - **runBackgroundJob(string $class,string $method,string $parameters,?int $tries,int $delay_seconds,int $priority)**
+    Returns: [backgroundJobId,executed,output,UNUSED]
+    Creates a background job with the argument data and sets it off to run.
+
+  - updateBackgroundJob(BackGroundjob,array $data) : [bool,BackgroundJob|Exception]
+    Returns: [true,BackgroundJob] or [false,Exception]
+    Updates the BackGroundjob with the attributes in $data
+
+  - echoStderr(string): void
+    Outputs to stderr with timestamps, used for logging
+
+  - updateBackgroundJobLog(BackGroundjob,array $data) : [BackgroundJob]
+    Updates the BackGroundjob with the attributes in $data. If an error occurs, it logs into stderr and exits with code 1.
+
+  - runBackgroundJobMainThread(BackGroundjob) : void
+    Runs the background job, used after forking but It might also be used by the main Laravel application
+
+NOTE (Quirk):  
+
+  $bj = updateBackgroundJob((object)['id' => $id],[]) is used to fetch a background job from the Database through the code
+
+
+## Example Runs
+
+- To check that everything is working. It should add a job that instantly finishes.
+
+    class = App\BackgroundJobs\Trivial
+    method = run
+    parameters (empty)
+    tries (empty)
+    delay (empty)
+    priority (empty)
+
+- To check that it handles exceptions. The job should error out.
+
+    class = App\BackgroundJobs\ThrowException
+    method = run
+    parameters (empty)
+    tries 1
+    delay (empty)
+    priority (empty)
+
+- To check that it handles delays. The job should have a diference of 5 seconds between created and ran 
+
+    class = App\BackgroundJobs\Trivial
+    method = run
+    parameters (empty)
+    tries (empty)
+    delay 5
+    priority (empty)
+
+- To check its Queue system. Since the default Queue size is 2, we are going to overflow it.
+  You should see a waiting job.
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority (empty)
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority (empty)
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority (empty)
+
+- To check its Priority system. Since the default Queue size is 2, we are going to overflow it, but with different priorities.
+  You should see a waiting job that has been created (4th one) later run before the other (3rd one).
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority (empty)
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority (empty)
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority (empty)
+
+    class = App\BackgroundJobs\Sleepy
+    method = run
+    parameters = {"seconds" : 15}
+    tries 1
+    delay (empty)
+    priority = 10
+
 
 ## License
   This code is licensed under the [Mozilla Public License Version 2.0](https://www.mozilla.org/media/MPL/2.0/index.f75d2927d3c1.txt)
